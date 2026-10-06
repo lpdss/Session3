@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Senior .NET Engineer at Northgate Labs · HireFlow</title>
+<style>
+/*
+  KEY SCREEN: Job Application (/roles/{role-id}), desktop browser frame,
+  plus one 360px frame of the form in its error state.
+  Visual reference only; DESIGN.md and EXPERIENCE.md are the contract.
+
+  Spine sections illustrated
+  - DESIGN.md: Colors (no success colour: accent + check + words);
+    Typography (title, heading, label, body, control);
+    Layout & Spacing (control height composed from spacing.2 + 1.75; spacing.4 between field groups;
+    ~70ch column [ASSUMPTION]); Elevation & Depth (none); Shapes;
+    Components: job-header, link, button-primary, button-secondary, text-field, text-field-error,
+    text-area, field-error, cv-upload, upload-progress, error-summary, alert-banner,
+    confirmation-panel, focus-ring; Do's and Don'ts (busy button stays full colour;
+    locked fields readonly with unchanged visuals).
+  - EXPERIENCE.md: Information Architecture (Job Application single column, order);
+    Microcopy: Job detail, Apply form, field errors (exact), submit outcomes (exact);
+    Component Patterns: job-header, text-field, text-area, field-error, cv-upload, upload-progress,
+    error-summary, alert-banner, confirmation-panel;
+    State Patterns > Job detail: Loaded;
+    State Patterns > Apply form: Pristine, Submit with errors, Submitting, Success, Server error;
+    State Patterns > CV upload: Empty, Rejected before upload, Uploading, Uploaded, Upload failed;
+    Key Flows: Flow 1 (steps 3-9), Flow 2 (steps 3-4), Flow 3 (steps 2-3);
+    Accessibility Floor: labels, errors, error summary, live regions, focus management, target size;
+    Responsive & Platform: 360-479px floor (gutter spacing.3, full-width buttons, CV text stacks).
+
+  Structural constants (sanctioned in DESIGN.md Components, not tokens):
+  1px borders, 2px focus ring. Font sizes reference spacing.3 (16px) and spacing.4 (32px).
+  The 360px frame width is composed as spacing.4 x 11 + spacing.2. Its rules are scoped to
+  .narrow because a frame inside one page cannot trigger a viewport media query.
+*/
+:root {
+  --color-surface: #ffffff;
+  --color-ink: #1a1d21;
+  --color-muted: #6b7280;
+  --color-accent: #2563eb;
+  --color-danger: #dc2626;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 32px;
+  --radius: 6px;
+  --font-sans: system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--space-3);
+  font-weight: 400;
+  line-height: 1.5;
+  padding: var(--space-4);
+}
+
+h1, h2, h3 { font-size: var(--space-3); font-weight: 700; line-height: 1.5; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Mock document annotations (outside the product frame) ---------- */
+.doc-title { font-weight: 700; }
+.doc-note { color: var(--color-muted); margin-top: var(--space-1); }
+.state { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-muted); }
+.state-label { font-weight: 700; }
+.state-note { color: var(--color-muted); }
+.sub-label { font-weight: 600; margin-top: var(--space-4); }
+
+/* ---------- Browser frame chrome ---------- */
+.frame {
+  margin-top: var(--space-3);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.frame.narrow {
+  box-sizing: content-box;
+  width: calc(var(--space-4) * 11 + var(--space-2));
+}
+.frame-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-muted);
+  color: var(--color-muted);
+}
+.frame-url {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  padding: 0 var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Product page ---------- */
+.page {
+  max-width: calc(70ch + var(--space-4) * 2);
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+.narrow .page { padding: var(--space-3); }
+
+.title { font-size: var(--space-4); font-weight: 700; line-height: 1.25; }
+.muted { color: var(--color-muted); }
+.label { display: block; font-weight: 600; }
+.optional { font-weight: 400; color: var(--color-muted); }
+.mt-1 { margin-top: var(--space-1); }
+.mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-3); }
+.mt-4 { margin-top: var(--space-4); }
+
+.icon {
+  width: var(--space-3);
+  height: var(--space-3);
+  flex: none;
+}
+
+/* Focus ring: 2px accent, spacing.1 offset. .is-focus depicts programmatic focus statically. */
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible,
+label:focus-within, [tabindex]:focus-visible, .is-focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: var(--space-1);
+}
+
+/* Links */
+.link { color: var(--color-accent); text-decoration: underline; }
+.link-standalone {
+  display: inline-block;
+  padding: var(--space-2) 0;
+  color: var(--color-accent);
+  line-height: 1.75;
+  text-decoration: none;
+}
+.link-standalone:hover { text-decoration: underline; }
+.link-btn {
+  padding: var(--space-2) 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font-family: inherit;
+  font-size: var(--space-3);
+  line-height: 1.75;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Buttons: 44px target composed from spacing.2 padding + 1.75 line-height */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: var(--space-3);
+  font-weight: 600;
+  line-height: 1.75;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:hover { text-decoration: underline; }
+.btn-primary { background: var(--color-accent); color: var(--color-surface); }
+.btn-secondary { background: var(--color-surface); color: var(--color-accent); }
+.btn[aria-disabled="true"] { cursor: default; text-decoration: none; }
+.narrow form .btn { width: 100%; }
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* Job header + description */
+.job-header > * + * { margin-top: var(--space-2); }
+.prose h2 { margin-top: var(--space-4); }
+.prose p, .prose ul { margin-top: var(--space-2); }
+.prose ul, .confirm ol { padding-left: calc(var(--space-3) + var(--space-1)); }
+
+/* Fields */
+.field + .field { margin-top: var(--space-4); }
+.input {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: var(--space-3);
+  font-weight: 400;
+  line-height: 1.75;
+}
+textarea.input { padding: var(--space-2); line-height: 1.5; resize: vertical; }
+.input:hover { border-color: var(--color-accent); }
+.input-error, .input-error:hover { border-color: var(--color-danger); }
+.hint { color: var(--color-muted); margin-top: var(--space-1); }
+.count-row { display: flex; gap: var(--space-3); margin-top: var(--space-1); }
+.count-row .hint { margin-top: 0; flex: 1; }
+.char-count { color: var(--color-muted); white-space: nowrap; text-align: right; }
+
+.field-error {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  color: var(--color-danger);
+}
+.field-error .icon, .banner .icon, .summary .icon, .confirm .icon { margin-top: var(--space-1); }
+
+/* CV upload */
+.cv-zone {
+  margin-top: var(--space-1);
+  padding: var(--space-3);
+  border: 1px dashed var(--color-muted);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.cv-zone.is-solid { border-style: solid; }
+.cv-zone.is-error { border: 1px solid var(--color-danger); }
+.cv-ready { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.cv-ready-text { display: inline-flex; align-items: center; gap: var(--space-2); }
+.cv-ready-text .icon { color: var(--color-muted); }
+.narrow .cv-ready { flex-direction: column; align-items: stretch; }
+.cv-zone .hint { margin-top: var(--space-2); }
+.cv-file { display: flex; align-items: center; flex-wrap: wrap; column-gap: var(--space-2); }
+.cv-file > .icon { color: var(--color-muted); }
+.cv-name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.cv-file .link-btn { margin-left: auto; }
+.cv-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
+
+/* Upload progress */
+.progress-row { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
+.track {
+  flex: 1;
+  height: var(--space-2);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.fill { height: 100%; background: var(--color-accent); }
+
+/* Error summary + alert banner: danger border with spacing.1 left rule */
+.summary, .banner {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-danger);
+  border-left-width: var(--space-1);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.summary .icon, .banner .icon { color: var(--color-danger); }
+.summary-heading, .banner-heading { font-weight: 600; }
+.summary ul { padding: 0; list-style: none; margin-top: var(--space-2); }
+.summary li + li { margin-top: var(--space-1); }
+.summary a { color: var(--color-danger); text-decoration: underline; }
+
+/* Confirmation panel: accent border with spacing.1 left rule */
+.confirm {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-accent);
+  border-left-width: var(--space-1);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.confirm > .icon { color: var(--color-accent); }
+.confirm-body { min-width: 0; }
+.confirm h3 { font-weight: 600; margin-top: var(--space-3); }
+.confirm ol { margin-top: var(--space-1); }
+</style>
+</head>
+<body>
+
+<p class="doc-title">Key screen: Job Application (Senior .NET Engineer, Northgate Labs)</p>
+<p class="doc-note">Desktop browser frame at 1024px and up. Main view is the full page with the form pristine. Alternate states follow as labelled sections and show only the region that changes; the role description above them is unchanged. Strings are from EXPERIENCE.md Microcopy; role description and applicant details are sample content.</p>
+
+<!-- ================= MAIN VIEW: LOADED + FORM PRISTINE ================= -->
+<section class="state" aria-label="Main view: loaded, form pristine">
+  <p class="state-label">Main view · Role loaded, form pristine</p>
+  <p class="state-note">State Patterns > Job detail > Loaded; Apply form > Pristine; CV upload > Empty. Single column: back link, job header, description sections, then the form. Optional fields say "(optional)"; required ones are not starred [ASSUMPTION]. Submit enabled.</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles/senior-net-engineer-northgate</span>
+    </div>
+
+    <main class="page" id="main">
+      <header class="job-header">
+        <nav aria-label="Back"><a class="link-standalone" href="/roles">All open roles</a></nav>
+        <h1 class="title">Senior .NET Engineer</h1>
+        <p class="muted">Northgate Labs · Manchester · Full-time · Posted 2 days ago</p>
+        <div><a class="btn btn-primary" href="#apply-for-role">Apply now</a></div>
+      </header>
+
+      <div class="prose mt-4">
+        <h2 style="margin-top:0">About the role</h2>
+        <p>Northgate Labs makes scheduling software for hospitals and regional transport operators. You'll join the Platform team, eight engineers who look after the .NET services behind every booking.</p>
+
+        <h2>What you'll do</h2>
+        <ul>
+          <li>Design, build and run C# services on .NET 8 that handle millions of bookings a month</li>
+          <li>Shape API contracts with the product and mobile teams</li>
+          <li>Review code, pair with mid-level engineers and help them grow</li>
+          <li>Join a light on-call rota, one week in eight</li>
+        </ul>
+
+        <h2>What you'll bring</h2>
+        <ul>
+          <li>Five or more years building production systems in C# and .NET</li>
+          <li>Solid SQL Server skills, including query tuning</li>
+          <li>Experience with message-based systems such as Azure Service Bus or RabbitMQ</li>
+          <li>Clear, kind written communication</li>
+        </ul>
+
+        <h2>Nice to have</h2>
+        <ul>
+          <li>Azure Kubernetes Service or Terraform</li>
+          <li>A background in healthcare or transport software</li>
+        </ul>
+
+        <h2>About Northgate Labs</h2>
+        <p>We're a team of 60 in Manchester, working hybrid with two office days a week. We care about calm releases, honest feedback and leaving on time.</p>
+      </div>
+
+      <section class="mt-4" aria-labelledby="apply-for-role">
+        <h2 id="apply-for-role" tabindex="-1">Apply for this role</h2>
+        <p class="muted mt-2">It takes about 5 minutes. Fields marked (optional) can be left blank.</p>
+
+        <form class="mt-4" aria-label="Apply for Senior .NET Engineer" novalidate>
+          <div class="field">
+            <label class="label" for="p-name">Full name</label>
+            <input class="input" id="p-name" type="text" autocomplete="name" aria-required="true">
+          </div>
+
+          <div class="field">
+            <label class="label" for="p-email">Email</label>
+            <input class="input" id="p-email" type="email" autocomplete="email" aria-required="true" aria-describedby="p-email-hint">
+            <p class="hint" id="p-email-hint">We'll only use this to contact you about this role.</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="p-phone">Phone <span class="optional">(optional)</span></label>
+            <input class="input" id="p-phone" type="tel" autocomplete="tel" aria-describedby="p-phone-hint">
+            <p class="hint" id="p-phone-hint">Include your country code if you're outside the UK.</p>
+          </div>
+
+          <div class="field">
+            <span class="label" id="p-cv-label">CV</span>
+            <div class="cv-zone">
+              <div class="cv-ready">
+                <span class="cv-ready-text">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 15v4h14v-4"/></svg>
+                  Drag your CV here, or
+                </span>
+                <label class="btn btn-secondary" for="p-cv">Choose file</label>
+                <input class="sr-only" id="p-cv" type="file" accept=".pdf,.docx" aria-required="true" aria-labelledby="p-cv-label" aria-describedby="p-cv-hint">
+              </div>
+              <p class="hint" id="p-cv-hint">PDF or Word (.docx), up to 5 MB</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="p-note">Cover note <span class="optional">(optional)</span></label>
+            <textarea class="input" id="p-note" rows="6" aria-describedby="p-note-hint p-note-count"></textarea>
+            <div class="count-row">
+              <p class="hint" id="p-note-hint">A few lines on why this role interests you. Up to 3,000 characters.</p>
+              <p class="char-count" id="p-note-count">0 / 3,000</p>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button class="btn btn-primary" type="submit">Send application</button>
+          </div>
+          <p class="sr-only" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+  </div>
+</section>
+
+<!-- ================= ALT: SUBMIT WITH ERRORS ================= -->
+<section class="state" aria-label="Alternate state: submit with errors">
+  <p class="state-label">Alternate · Inline validation after submit (error summary focused)</p>
+  <p class="state-note">State Patterns > Apply form > Submit with errors; CV upload > Rejected before upload; Flow 3 steps 2-3. No request sent. Focus moves to the summary (ring shown); its heading states the count; each link focuses its field. Invalid fields carry aria-invalid and a danger border, icon and exact copy. Phone and cover note are optional and empty, so they raise nothing.</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles/senior-net-engineer-northgate</span>
+    </div>
+
+    <div class="page">
+      <section aria-labelledby="e-apply">
+        <h2 id="e-apply" tabindex="-1">Apply for this role</h2>
+        <p class="muted mt-2">It takes about 5 minutes. Fields marked (optional) can be left blank.</p>
+
+        <form class="mt-4" aria-label="Apply for Senior .NET Engineer" novalidate>
+          <div class="summary is-focus" tabindex="-1" aria-labelledby="e-summary-h">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+            <div>
+              <h3 class="summary-heading" id="e-summary-h">3 things need fixing before we can send your application</h3>
+              <ul>
+                <li><a href="#e-name">Please enter your full name.</a></li>
+                <li><a href="#e-email">That email doesn't look quite right. Check for a typo, like name@example.com.</a></li>
+                <li><a href="#e-cv">We can only accept PDF or Word (.docx) files. "cv.pages" is a .pages file.</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="field mt-4">
+            <label class="label" for="e-name">Full name</label>
+            <input class="input input-error" id="e-name" type="text" autocomplete="name" aria-required="true" aria-invalid="true" aria-describedby="e-name-err">
+            <p class="field-error" id="e-name-err">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+              <span>Please enter your full name.</span>
+            </p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="e-email">Email</label>
+            <input class="input input-error" id="e-email" type="email" autocomplete="email" value="priya@gmail" aria-required="true" aria-invalid="true" aria-describedby="e-email-err e-email-hint">
+            <p class="field-error" id="e-email-err">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+              <span>That email doesn't look quite right. Check for a typo, like name@example.com.</span>
+            </p>
+            <p class="hint" id="e-email-hint">We'll only use this to contact you about this role.</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="e-phone">Phone <span class="optional">(optional)</span></label>
+            <input class="input" id="e-phone" type="tel" autocomplete="tel" aria-describedby="e-phone-hint">
+            <p class="hint" id="e-phone-hint">Include your country code if you're outside the UK.</p>
+          </div>
+
+          <div class="field">
+            <span class="label" id="e-cv-label">CV</span>
+            <div class="cv-zone is-error">
+              <div class="cv-ready">
+                <span class="cv-ready-text">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 15v4h14v-4"/></svg>
+                  Drag your CV here, or
+                </span>
+                <label class="btn btn-secondary" for="e-cv">Choose file</label>
+                <input class="sr-only" id="e-cv" type="file" accept=".pdf,.docx" aria-required="true" aria-invalid="true" aria-labelledby="e-cv-label" aria-describedby="e-cv-err e-cv-hint">
+              </div>
+              <p class="hint" id="e-cv-hint">PDF or Word (.docx), up to 5 MB</p>
+            </div>
+            <p class="field-error" id="e-cv-err" role="alert">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+              <span>We can only accept PDF or Word (.docx) files. "cv.pages" is a .pages file.</span>
+            </p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="e-note">Cover note <span class="optional">(optional)</span></label>
+            <textarea class="input" id="e-note" rows="6" aria-describedby="e-note-hint e-note-count"></textarea>
+            <div class="count-row">
+              <p class="hint" id="e-note-hint">A few lines on why this role interests you. Up to 3,000 characters.</p>
+              <p class="char-count" id="e-note-count">0 / 3,000</p>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button class="btn btn-primary" type="submit">Send application</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ALT: CV UPLOAD STATES ================= -->
+<section class="state" aria-label="Alternate states: CV upload">
+  <p class="state-label">Alternate · CV upload states</p>
+  <p class="state-note">State Patterns > CV upload > Uploading, Uploaded, Upload failed; Flow 1 step 6. Only the CV field is shown; the rest of the form is unchanged.</p>
+
+  <p class="sub-label">Uploading (progress)</p>
+  <p class="state-note">Filename, progress bar with percent, "Remove" cancels. role="progressbar"; "Uploading priya-cv.pdf" announced once.</p>
+  <div class="frame">
+    <div class="page">
+      <div class="field">
+        <span class="label" id="u1-cv-label">CV</span>
+        <div class="cv-zone">
+          <div class="cv-file">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>
+            <span class="cv-name">priya-cv.pdf</span>
+            <button class="link-btn" type="button" aria-label="Remove priya-cv.pdf">Remove</button>
+          </div>
+          <div class="progress-row">
+            <div class="track" role="progressbar" aria-label="Uploading priya-cv.pdf" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64"><div class="fill" style="width:64%"></div></div>
+            <span class="muted">64%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="sub-label">Uploaded</p>
+  <p class="state-note">Solid 1px border, file icon, filename (600), size (muted), "Remove". After remove, focus returns to "Choose file".</p>
+  <div class="frame">
+    <div class="page">
+      <div class="field">
+        <span class="label" id="u2-cv-label">CV</span>
+        <div class="cv-zone is-solid">
+          <div class="cv-file">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>
+            <span class="cv-name">priya-cv.pdf</span>
+            <span class="muted">412 KB</span>
+            <button class="link-btn" type="button" aria-label="Remove priya-cv.pdf">Remove</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="sub-label">Upload failed</p>
+  <p class="state-note">Danger border, exact copy, "Try again" re-uploads the same file, "Choose a different file". role="alert".</p>
+  <div class="frame">
+    <div class="page">
+      <div class="field">
+        <span class="label" id="u3-cv-label">CV</span>
+        <div class="cv-zone is-error">
+          <div class="cv-file">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>
+            <span class="cv-name">priya-cv.pdf</span>
+          </div>
+          <div class="cv-actions">
+            <button class="btn btn-secondary" type="button">Try again</button>
+            <button class="link-btn" type="button">Choose a different file</button>
+          </div>
+        </div>
+        <p class="field-error" role="alert">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+          <span>We couldn't upload "priya-cv.pdf". Check your connection and try again.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ALT: SUBMITTING ================= -->
+<section class="state" aria-label="Alternate state: submitting">
+  <p class="state-label">Alternate · Submitting</p>
+  <p class="state-note">State Patterns > Apply form > Submitting; Flow 1 step 8. Button stays full colour, spinner plus "Sending your application…", aria-disabled. Inputs and CV "Remove" are readonly/locked with visuals unchanged. Polite status region announces "Sending your application". Focus stays on the button (ring shown).</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles/senior-net-engineer-northgate</span>
+    </div>
+
+    <div class="page">
+      <section aria-labelledby="s-apply">
+        <h2 id="s-apply" tabindex="-1">Apply for this role</h2>
+        <p class="muted mt-2">It takes about 5 minutes. Fields marked (optional) can be left blank.</p>
+
+        <form class="mt-4" aria-label="Apply for Senior .NET Engineer" novalidate>
+          <div class="field">
+            <label class="label" for="s-name">Full name</label>
+            <input class="input" id="s-name" type="text" autocomplete="name" value="Priya Raman" readonly aria-required="true">
+          </div>
+
+          <div class="field">
+            <label class="label" for="s-email">Email</label>
+            <input class="input" id="s-email" type="email" autocomplete="email" value="priya.raman@example.com" readonly aria-required="true" aria-describedby="s-email-hint">
+            <p class="hint" id="s-email-hint">We'll only use this to contact you about this role.</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="s-phone">Phone <span class="optional">(optional)</span></label>
+            <input class="input" id="s-phone" type="tel" autocomplete="tel" value="07700 900123" readonly aria-describedby="s-phone-hint">
+            <p class="hint" id="s-phone-hint">Include your country code if you're outside the UK.</p>
+          </div>
+
+          <div class="field">
+            <span class="label">CV</span>
+            <div class="cv-zone is-solid">
+              <div class="cv-file">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>
+                <span class="cv-name">priya-cv.pdf</span>
+                <span class="muted">412 KB</span>
+                <button class="link-btn" type="button" aria-disabled="true" aria-label="Remove priya-cv.pdf">Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="s-note">Cover note <span class="optional">(optional)</span></label>
+            <textarea class="input" id="s-note" rows="6" readonly aria-describedby="s-note-hint s-note-count">I've spent six years building booking and payments services in C# and .NET, most recently moving a monolith onto Azure Service Bus. Northgate's work on hospital scheduling is exactly the kind of problem I want to spend my time on. I'd love to talk about the Platform team.</textarea>
+            <div class="count-row">
+              <p class="hint" id="s-note-hint">A few lines on why this role interests you. Up to 3,000 characters.</p>
+              <p class="char-count" id="s-note-count">272 / 3,000</p>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button class="btn btn-primary is-focus" type="submit" aria-disabled="true">
+              <svg class="icon spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+              Sending your application…
+            </button>
+          </div>
+          <p class="sr-only" aria-live="polite">Sending your application</p>
+        </form>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ALT: SUCCESS ================= -->
+<section class="state" aria-label="Alternate state: success">
+  <p class="state-label">Alternate · Success confirmation</p>
+  <p class="state-note">State Patterns > Apply form > Success; Flow 1 step 9. The confirmation panel replaces the form; the role description stays above (last section shown). Focus moves to the confirmation heading (ring shown). Page title becomes "Application sent · Senior .NET Engineer at Northgate Labs · HireFlow". Accent, check icon and words carry success; there is no green.</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles/senior-net-engineer-northgate</span>
+    </div>
+
+    <div class="page">
+      <div class="prose">
+        <h2 style="margin-top:0">About Northgate Labs</h2>
+        <p>We're a team of 60 in Manchester, working hybrid with two office days a week. We care about calm releases, honest feedback and leaving on time.</p>
+      </div>
+
+      <section class="confirm mt-4" aria-labelledby="ok-h">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+        <div class="confirm-body">
+          <h2 id="ok-h" class="is-focus" tabindex="-1">Thanks, Priya. Your application is in.</h2>
+          <p>We've emailed a confirmation to priya.raman@example.com.</p>
+          <h3>What happens next</h3>
+          <ol>
+            <li>You'll get a confirmation email in the next few minutes.</li>
+            <li>The Northgate Labs hiring team reads every application.</li>
+            <li>You'll hear back either way, usually within two weeks.</li>
+          </ol>
+          <p class="mt-3"><a class="link-standalone" href="/roles">Browse other open roles</a></p>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ALT: SERVER ERROR ================= -->
+<section class="state" aria-label="Alternate state: server error">
+  <p class="state-label">Alternate · Server error, data preserved</p>
+  <p class="state-note">State Patterns > Apply form > Server error; Flow 2 steps 3-4. Form unlocked; every value and the uploaded CV preserved. Alert banner (role="alert") directly above the submit button [ASSUMPTION]; focus moves to the banner heading (ring shown). "Try again" resubmits the same data.</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles/senior-net-engineer-northgate</span>
+    </div>
+
+    <div class="page">
+      <section aria-labelledby="x-apply">
+        <h2 id="x-apply" tabindex="-1">Apply for this role</h2>
+        <p class="muted mt-2">It takes about 5 minutes. Fields marked (optional) can be left blank.</p>
+
+        <form class="mt-4" aria-label="Apply for Senior .NET Engineer" novalidate>
+          <div class="field">
+            <label class="label" for="x-name">Full name</label>
+            <input class="input" id="x-name" type="text" autocomplete="name" value="Priya Raman" aria-required="true">
+          </div>
+
+          <div class="field">
+            <label class="label" for="x-email">Email</label>
+            <input class="input" id="x-email" type="email" autocomplete="email" value="priya.raman@example.com" aria-required="true" aria-describedby="x-email-hint">
+            <p class="hint" id="x-email-hint">We'll only use this to contact you about this role.</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="x-phone">Phone <span class="optional">(optional)</span></label>
+            <input class="input" id="x-phone" type="tel" autocomplete="tel" value="07700 900123" aria-describedby="x-phone-hint">
+            <p class="hint" id="x-phone-hint">Include your country code if you're outside the UK.</p>
+          </div>
+
+          <div class="field">
+            <span class="label">CV</span>
+            <div class="cv-zone is-solid">
+              <div class="cv-file">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>
+                <span class="cv-name">priya-cv.pdf</span>
+                <span class="muted">412 KB</span>
+                <button class="link-btn" type="button" aria-label="Remove priya-cv.pdf">Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="x-note">Cover note <span class="optional">(optional)</span></label>
+            <textarea class="input" id="x-note" rows="6" aria-describedby="x-note-hint x-note-count">I've spent six years building booking and payments services in C# and .NET, most recently moving a monolith onto Azure Service Bus. Northgate's work on hospital scheduling is exactly the kind of problem I want to spend my time on. I'd love to talk about the Platform team.</textarea>
+            <div class="count-row">
+              <p class="hint" id="x-note-hint">A few lines on why this role interests you. Up to 3,000 characters.</p>
+              <p class="char-count" id="x-note-count">272 / 3,000</p>
+            </div>
+          </div>
+
+          <div class="banner mt-4" role="alert">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+            <div>
+              <h3 class="banner-heading is-focus" tabindex="-1">We couldn't send your application</h3>
+              <p>Something went wrong on our side. Your answers and CV are still here, so nothing is lost.</p>
+              <button class="btn btn-secondary mt-3" type="button">Try again</button>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <button class="btn btn-primary" type="submit">Send application</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- ================= NARROW 360px: FORM IN ERROR STATE ================= -->
+<section class="state" aria-label="Narrow frame: 360px, form in error state">
+  <p class="state-label">Narrow · 360px floor, form in error state</p>
+  <p class="state-note">Responsive & Platform > 360-479px. Gutter spacing.3; buttons full width inside the form [ASSUMPTION]; CV zone text stacks ("Drag your CV here, or" above "Choose file"); error summary full width; no horizontal scroll. Same errors as the desktop error section.</p>
+
+  <div class="frame narrow">
+    <div class="frame-bar">
+      <span class="frame-url">hireflow.example/roles/senior-net-…</span>
+    </div>
+
+    <div class="page">
+      <section aria-labelledby="n-apply">
+        <h2 id="n-apply" tabindex="-1">Apply for this role</h2>
+        <p class="muted mt-2">It takes about 5 minutes. Fields marked (optional) can be left blank.</p>
+
+        <form class="mt-4" aria-label="Apply for Senior .NET Engineer" novalidate>
+          <div class="summary is-focus" tabindex="-1" aria-labelledby="n-summary-h">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+            <div>
+              <h3 class="summary-heading" id="n-summary-h">3 things need fixing before we can send your application</h3>
+              <ul>
+                <li><a href="#n-name">Please enter your full name.</a></li>
+                <li><a href="#n-email">That email doesn't look quite right. Check for a typo, like name@example.com.</a></li>
+                <li><a href="#n-cv">We can only accept PDF or Word (.docx) files. "cv.pages" is a .pages file.</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="field mt-4">
+            <label class="label" for="n-name">Full name</label>
+            <input class="input input-error" id="n-name" type="text" autocomplete="name" aria-required="true" aria-invalid="true" aria-describedby="n-name-err">
+            <p class="field-error" id="n-name-err">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+              <span>Please enter your full name.</span>
+            </p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="n-email">Email</label>
+            <input class="input input-error" id="n-email" type="email" autocomplete="email" value="priya@gmail" aria-required="true" aria-invalid="true" aria-describedby="n-email-err n-email-hint">
+            <p class="field-error" id="n-email-err">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+              <span>That email doesn't look quite right. Check for a typo, like name@example.com.</span>
+            </p>
+            <p class="hint" id="n-email-hint">We'll only use this to contact you about this role.</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="n-phone">Phone <span class="optional">(optional)</span></label>
+            <input class="input" id="n-phone" type="tel" autocomplete="tel" aria-describedby="n-phone-hint">
+            <p class="hint" id="n-phone-hint">Include your country code if you're outside the UK.</p>
+          </div>
+
+          <div class="field">
+            <span class="label" id="n-cv-label">CV</span>
+            <div class="cv-zone is-error">
+              <div class="cv-ready">
+                <span class="cv-ready-text">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 15v4h14v-4"/></svg>
+                  Drag your CV here, or
+                </span>
+                <label class="btn btn-secondary" for="n-cv">Choose file</label>
+                <input class="sr-only" id="n-cv" type="file" accept=".pdf,.docx" aria-required="true" aria-invalid="true" aria-labelledby="n-cv-label" aria-describedby="n-cv-err n-cv-hint">
+              </div>
+              <p class="hint" id="n-cv-hint">PDF or Word (.docx), up to 5 MB</p>
+            </div>
+            <p class="field-error" id="n-cv-err">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+              <span>We can only accept PDF or Word (.docx) files. "cv.pages" is a .pages file.</span>
+            </p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="n-note">Cover note <span class="optional">(optional)</span></label>
+            <textarea class="input" id="n-note" rows="6" aria-describedby="n-note-hint n-note-count"></textarea>
+            <div class="count-row">
+              <p class="hint" id="n-note-hint">A few lines on why this role interests you. Up to 3,000 characters.</p>
+              <p class="char-count" id="n-note-count">0 / 3,000</p>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button class="btn btn-primary" type="submit">Send application</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

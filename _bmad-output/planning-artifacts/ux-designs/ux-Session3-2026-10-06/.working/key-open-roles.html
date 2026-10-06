@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Key screen: Open Roles · HireFlow</title>
+<style>
+/*
+  KEY SCREEN: Open Roles (/roles), desktop browser frame.
+  Visual reference only; DESIGN.md and EXPERIENCE.md are the contract.
+
+  Spine sections illustrated
+  - DESIGN.md: Colors; Typography (title, heading, label, body, control);
+    Layout & Spacing (content column ~70ch [ASSUMPTION], gutter spacing.4 at desktop);
+    Elevation & Depth (none); Shapes (one radius);
+    Components: search-field, job-row, skeleton-row, empty-state, alert-banner,
+    button-secondary, focus-ring.
+  - EXPERIENCE.md: Information Architecture (Open Roles);
+    Microcopy: Open Roles (all slots used verbatim);
+    Component Patterns: search-field, job-row, skeleton-row, empty-state, alert-banner;
+    State Patterns > Open Roles: Populated, Initial loading, No results,
+    Zero roles at all, Load error;
+    Key Flows: Flow 1 step 1, Flow 4 steps 1 and 4;
+    Accessibility Floor: labels, live regions, landmarks, focus visibility.
+
+  Structural constants (sanctioned in DESIGN.md Components, not tokens):
+  1px borders, 2px focus ring. Font sizes reference spacing.3 (16px) and spacing.4 (32px).
+*/
+:root {
+  --color-surface: #ffffff;
+  --color-ink: #1a1d21;
+  --color-muted: #6b7280;
+  --color-accent: #2563eb;
+  --color-danger: #dc2626;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 32px;
+  --radius: 6px;
+  --font-sans: system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--space-3);
+  font-weight: 400;
+  line-height: 1.5;
+  padding: var(--space-4);
+}
+
+h1, h2, h3 { font-size: var(--space-3); font-weight: 700; line-height: 1.5; }
+ul { padding: 0; list-style: none; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Mock document annotations (outside the product frame) ---------- */
+.doc-title { font-weight: 700; }
+.doc-note { color: var(--color-muted); margin-top: var(--space-1); }
+.state { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-muted); }
+.state-label { font-weight: 700; }
+.state-note { color: var(--color-muted); }
+
+/* ---------- Browser frame chrome ---------- */
+.frame {
+  margin-top: var(--space-3);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.frame-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-muted);
+  color: var(--color-muted);
+}
+.frame-url {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  padding: 0 var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Product page ---------- */
+.page {
+  max-width: calc(70ch + var(--space-4) * 2);
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+.title { font-size: var(--space-4); font-weight: 700; line-height: 1.25; }
+.muted { color: var(--color-muted); }
+.label { display: block; font-weight: 600; }
+.mt-1 { margin-top: var(--space-1); }
+.mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-3); }
+.mt-4 { margin-top: var(--space-4); }
+
+.icon {
+  width: var(--space-3);
+  height: var(--space-3);
+  flex: none;
+}
+
+/* Focus ring: 2px accent, spacing.1 offset. .is-focus depicts programmatic focus statically. */
+a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible, .is-focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: var(--space-1);
+}
+
+/* Buttons: 44px target composed from spacing.2 padding + 1.75 line-height */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: var(--space-3);
+  font-weight: 600;
+  line-height: 1.75;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:hover { text-decoration: underline; }
+.btn-secondary { background: var(--color-surface); color: var(--color-accent); }
+
+/* Search field */
+.search-wrap { position: relative; margin-top: var(--space-1); }
+.search-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  pointer-events: none;
+}
+.input {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: var(--space-3);
+  font-weight: 400;
+  line-height: 1.75;
+}
+.input:hover { border-color: var(--color-accent); }
+.search-input { padding-left: calc(var(--space-3) * 2 + var(--space-2)); }
+.search-input.has-clear { padding-right: calc(var(--space-4) + var(--space-3)); }
+.search-clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.hint { color: var(--color-muted); margin-top: var(--space-1); }
+
+/* Job rows */
+.rows li + li { margin-top: var(--space-2); }
+.job-row {
+  display: block;
+  padding: var(--space-3);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.job-title { display: block; color: var(--color-accent); font-weight: 600; }
+.job-meta { display: block; color: var(--color-muted); }
+.job-row:hover { border-color: var(--color-accent); }
+.job-row:hover .job-title { text-decoration: underline; }
+
+/* Skeleton rows: same box as job-row, outlined bars, no fill, static */
+.skeleton-row {
+  padding: var(--space-3);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.bar {
+  display: block;
+  height: var(--space-3);
+  margin: var(--space-1) 0;
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+}
+.bar-title { width: 50%; }
+.bar-meta { width: 33%; }
+
+/* Empty state */
+.empty { text-align: center; padding: var(--space-4) 0; }
+.empty .btn { margin-top: var(--space-3); }
+
+/* Alert banner */
+.banner {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-danger);
+  border-left-width: var(--space-1);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.banner .icon { color: var(--color-danger); margin-top: var(--space-1); }
+.banner-heading { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<p class="doc-title">Key screen: Open Roles</p>
+<p class="doc-note">Desktop browser frame at 1024px and up. Main view is the populated list; load-bearing alternate states follow as labelled sections. Every string is from EXPERIENCE.md Microcopy: Open Roles. Role data is sample content.</p>
+
+<!-- ================= MAIN VIEW: POPULATED ================= -->
+<section class="state" aria-label="Main view: populated">
+  <p class="state-label">Main view · Populated</p>
+  <p class="state-note">State Patterns > Open Roles > Populated. Count line, then job rows, newest first [ASSUMPTION]. Whole row is one link and one tab stop. Count region is aria-live polite (not announced on first load).</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles</span>
+    </div>
+
+    <main class="page" id="main">
+      <h1 class="title">Open roles</h1>
+      <p class="muted mt-2">Find a role where you can do your best work.</p>
+
+      <div class="mt-4">
+        <label class="label" for="q1">Search roles</label>
+        <div class="search-wrap">
+          <svg class="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input class="input search-input" id="q1" type="search" aria-describedby="q1-hint">
+        </div>
+        <p class="hint" id="q1-hint">Try a job title, team or location</p>
+      </div>
+
+      <section class="mt-4" aria-labelledby="roles-h1">
+        <h2 class="sr-only" id="roles-h1">Roles</h2>
+        <p aria-live="polite">8 open roles</p>
+        <ul class="rows mt-3">
+          <li><a class="job-row" href="/roles/senior-net-engineer-northgate"><span class="job-title">Senior .NET Engineer</span><span class="job-meta">Northgate Labs · Manchester · Full-time · Posted 2 days ago</span></a></li>
+          <li><a class="job-row" href="/roles/product-designer-fernway"><span class="job-title">Product Designer</span><span class="job-meta">Fernway Health · Remote (UK) · Full-time · Posted 3 days ago</span></a></li>
+          <li><a class="job-row" href="/roles/net-developer-calder"><span class="job-title">.NET Developer</span><span class="job-meta">Calder Systems · Leeds · Full-time · Posted 5 days ago</span></a></li>
+          <li><a class="job-row" href="/roles/data-analyst-northgate"><span class="job-title">Data Analyst</span><span class="job-meta">Northgate Labs · Manchester · Contract · Posted 1 week ago</span></a></li>
+          <li><a class="job-row" href="/roles/engineering-manager-platform-brightwater"><span class="job-title">Engineering Manager, Platform</span><span class="job-meta">Brightwater Energy · Bristol · Full-time · Posted 1 week ago</span></a></li>
+          <li><a class="job-row" href="/roles/lead-net-engineer-payments-ashby"><span class="job-title">Lead .NET Engineer, Payments</span><span class="job-meta">Ashby Finance · London · Full-time · Posted 2 weeks ago</span></a></li>
+          <li><a class="job-row" href="/roles/customer-success-manager-fernway"><span class="job-title">Customer Success Manager</span><span class="job-meta">Fernway Health · Remote (UK) · Part-time · Posted 2 weeks ago</span></a></li>
+          <li><a class="job-row" href="/roles/qa-engineer-calder"><span class="job-title">QA Engineer</span><span class="job-meta">Calder Systems · Leeds · Full-time · Posted 3 weeks ago</span></a></li>
+        </ul>
+      </section>
+    </main>
+  </div>
+</section>
+
+<!-- ================= ALT: LOADING SKELETON ================= -->
+<section class="state" aria-label="Alternate state: initial loading">
+  <p class="state-label">Alternate · Initial loading (skeleton)</p>
+  <p class="state-note">State Patterns > Open Roles > Initial loading. Title, intro and search render at once and search is usable. Five outlined skeleton rows, static, no fill, no count. List aria-busy; skeletons aria-hidden.</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles</span>
+    </div>
+
+    <main class="page">
+      <h1 class="title">Open roles</h1>
+      <p class="muted mt-2">Find a role where you can do your best work.</p>
+
+      <div class="mt-4">
+        <label class="label" for="q2">Search roles</label>
+        <div class="search-wrap">
+          <svg class="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input class="input search-input" id="q2" type="search" aria-describedby="q2-hint">
+        </div>
+        <p class="hint" id="q2-hint">Try a job title, team or location</p>
+      </div>
+
+      <section class="mt-4" aria-labelledby="roles-h2" aria-busy="true">
+        <h2 class="sr-only" id="roles-h2">Roles</h2>
+        <p aria-live="polite"></p>
+        <ul class="rows mt-3" aria-hidden="true">
+          <li class="skeleton-row"><span class="bar bar-title"></span><span class="bar bar-meta"></span></li>
+          <li class="skeleton-row"><span class="bar bar-title"></span><span class="bar bar-meta"></span></li>
+          <li class="skeleton-row"><span class="bar bar-title"></span><span class="bar bar-meta"></span></li>
+          <li class="skeleton-row"><span class="bar bar-title"></span><span class="bar bar-meta"></span></li>
+          <li class="skeleton-row"><span class="bar bar-title"></span><span class="bar bar-meta"></span></li>
+        </ul>
+      </section>
+    </main>
+  </div>
+</section>
+
+<!-- ================= ALT: NO RESULTS ================= -->
+<section class="state" aria-label="Alternate state: no results">
+  <p class="state-label">Alternate · No results (search echoed, clear action)</p>
+  <p class="state-note">State Patterns > Open Roles > No results; Flow 4 step 1. Query echoed exactly as typed. The clear (×) control shows inside the field once there is text. "Clear search" empties the field, restores the list and returns focus to the field.</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles?q=rust</span>
+    </div>
+
+    <main class="page">
+      <h1 class="title">Open roles</h1>
+      <p class="muted mt-2">Find a role where you can do your best work.</p>
+
+      <div class="mt-4">
+        <label class="label" for="q3">Search roles</label>
+        <div class="search-wrap">
+          <svg class="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input class="input search-input has-clear" id="q3" type="search" value="rust" aria-describedby="q3-hint">
+          <button class="search-clear" type="button" aria-label="Clear search">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="hint" id="q3-hint">Try a job title, team or location</p>
+      </div>
+
+      <section class="mt-4" aria-labelledby="roles-h3">
+        <h2 class="sr-only" id="roles-h3">Roles</h2>
+        <p class="sr-only" aria-live="polite">No roles match "rust"</p>
+        <div class="empty">
+          <h2>No roles match "rust"</h2>
+          <p class="muted">Try a different word or check the spelling. New roles are added often.</p>
+          <button class="btn btn-secondary" type="button">Clear search</button>
+        </div>
+      </section>
+    </main>
+  </div>
+</section>
+
+<!-- ================= ALT: ZERO ROLES ================= -->
+<section class="state" aria-label="Alternate state: zero roles at all">
+  <p class="state-label">Alternate · Zero roles at all</p>
+  <p class="state-note">State Patterns > Open Roles > Zero roles at all; Flow 4 step 4. Search field hidden so nobody is invited to search an empty list. No action button. Announced via the count region.</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles</span>
+    </div>
+
+    <main class="page">
+      <h1 class="title">Open roles</h1>
+      <p class="muted mt-2">Find a role where you can do your best work.</p>
+
+      <section class="mt-4" aria-labelledby="roles-h4">
+        <h2 class="sr-only" id="roles-h4">Roles</h2>
+        <p class="sr-only" aria-live="polite">We're not hiring right now</p>
+        <div class="empty">
+          <h2>We're not hiring right now</h2>
+          <p class="muted">There are no open roles at the moment, but that changes. Please check back soon.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</section>
+
+<!-- ================= ALT: LOAD ERROR ================= -->
+<section class="state" aria-label="Alternate state: load error">
+  <p class="state-label">Alternate · Load error with retry</p>
+  <p class="state-note">State Patterns > Open Roles > Load error. Skeletons replaced by an alert banner (role="alert") in the list area. Search field hidden [ASSUMPTION: hidden]. Focus stays where it was. "Try again" returns to Initial loading and moves focus to the visually hidden "Roles" heading.</p>
+
+  <div class="frame">
+    <div class="frame-bar">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="frame-url">hireflow.example/roles</span>
+    </div>
+
+    <main class="page">
+      <h1 class="title">Open roles</h1>
+      <p class="muted mt-2">Find a role where you can do your best work.</p>
+
+      <section class="mt-4" aria-labelledby="roles-h5">
+        <h2 class="sr-only" id="roles-h5" tabindex="-1">Roles</h2>
+        <div class="banner" role="alert">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+          <div>
+            <h3 class="banner-heading">We couldn't load the roles</h3>
+            <p>Check your connection and try again.</p>
+            <button class="btn btn-secondary mt-3" type="button">Try again</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</section>
+
+</body>
+</html>
